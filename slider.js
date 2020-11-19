@@ -6,6 +6,9 @@ class Slider {
     this.sliders = sliders;
     this.width = 600;
     this.height = 600;
+    this.pi2 = 2 * Math.Pi;
+    this.arcLength = 10;
+    this.arcSpacing = 1;
   }
 
   init() {
@@ -32,6 +35,16 @@ class Slider {
     slider.step = slider.step ?? 5;
     slider.initialVal = slider.initialVal ?? 0;
 
+    const circumf = slider.radius * this.pi2;
+    const initialAngle = Math.floor( (slider.initialVal / (slider.max - slider.min)) * 360 );
+
+    const arcSpacing = this.calculateArcSpacing(circumf, this.arcLength, this.arcSpacing);
+
     return;
   }
+
+  calculateArcSpacing(circumf, arcLength, arcSpacing) {
+    return;
+  }
+
 }
