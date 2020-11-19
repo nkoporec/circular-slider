@@ -125,14 +125,29 @@ class Slider {
             const li = document.createElement('li');
             li.setAttribute('data-slider', index);
 
+            // Value.
             const sliderValue = document.createElement('span');
             sliderValue.classList.add('slider-val');
             sliderValue.innerText = 0;
             li.appendChild(sliderValue);
 
+            // Name.
             const sliderName = document.createElement('span');
             sliderName.innerText = slider.id ?? 'Unknown';
             li.appendChild(sliderName);
+
+            // Color.
+            const sliderColorSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            sliderColorSvg.setAttribute('height', 20);
+            sliderColorSvg.setAttribute('width', 20);
+
+            const sliderColorRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            sliderColorRect.setAttribute('height', 20);
+            sliderColorRect.setAttribute('width', 20);
+            sliderColorRect.setAttribute('fill', slider.color);
+            sliderColorSvg.appendChild(sliderColorRect);
+
+            sliderName.prepend(sliderColorSvg);
 
             ui_wrapper.appendChild(li);
         });
