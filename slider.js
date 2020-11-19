@@ -13,7 +13,7 @@ class Slider {
 
     init() {
         const svgContainer = document.createElement('div');
-        svgContainer.classList.add('slider__data');
+        svgContainer.classList.add('slider');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('height', this.sliderWidth);
         svg.setAttribute('width', this.sliderHeight);
@@ -21,6 +21,13 @@ class Slider {
         this.container.appendChild(svgContainer);
 
         this.sliders.forEach((slider) => this.drawSlider(svg, slider));
+
+        svgContainer.addEventListener('mousedown', this.mouseStart.bind(this), false);
+        svgContainer.addEventListener('touchstart', this.mouseStart.bind(this), false);
+        svgContainer.addEventListener('mousemove', this.mouseMove.bind(this), false);
+        svgContainer.addEventListener('touchmove', this.mouseMove.bind(this), false);
+        window.addEventListener('mouseup', this.mouseEnd.bind(this), false);
+        window.addEventListener('touchend', this.mouseEnd.bind(this), false);
     }
 
     drawSlider(svg, slider) {
@@ -39,12 +46,17 @@ class Slider {
         sliderGroup.setAttribute('rad', slider.radius);
         svg.appendChild(sliderGroup);
 
-        this.drawPath(slider.radius, 360, sliderGroup, slider.color);
+        this.drawPath(slider.radius, 360, sliderGroup, "#000", 'back');
+        this.drawPath(slider.radius, 360, sliderGroup, slider.color, 'front');
+
         this.drawHandle(slider, initialAngle, sliderGroup);
     }
 
-    drawPath(radius, angle, group, color) {
+    drawPath(radius, angle, group, color, type) {
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+        const pathClass = (type === 'front') ? 'sliderSinglePathActive' : 'sliderSinglePath';
+        path.classList.add(pathClass);
         path.setAttribute('d', this.describeArc(this.cx, this.cy, radius, 0, angle));
         path.style.stroke = color;
         path.style.strokeWidth = 30;
@@ -56,7 +68,7 @@ class Slider {
         const handleCenter = this.calculateHandleCenter(initialAngle * this.tau / 360, slider.radius);
         const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
-        handle.setAttribute('class', 'sliderHandle');
+        handle.setAttribute('class', 'handle');
         handle.setAttribute('cx', handleCenter.x);
         handle.setAttribute('cy', handleCenter.y);
         handle.setAttribute('r', 12.5);
@@ -107,4 +119,75 @@ class Slider {
         return {x, y};
     }
 
+    mouseStart(e) {
+        if (this.mouseDown) return;
+        this.mouseDown = true;
+        const rmc = this.getMouseCoordinates(e);
+        this.closestSlider(rmc);
+        this.redrawSlider(rmc);
+    }
+
+    mouseMove(e) {
+        if (!this.mouseDown) return;
+        e.preventDefault();
+        const rmc = this.getMouseCoordinates(e);
+        this.redrawSlider(rmc);
+    }
+
+    mouseEnd() {
+        if (!this.mouseDown) return;
+        this.mouseDown = false;
+        this.activeSlider = null;
+    }
+
+    redrawSlider(rmc) {
+        const activePath = this.activeSlider.querySelector('.sliderSinglePathActive');
+        const radius = +this.activeSlider.getAttribute('rad');
+        const currentAngle = this.calculateMouseAngle(rmc) * 0.999;
+
+        // Redraw active path
+        activePath.setAttribute('d', this.describeArc(this.cx, this.cy, radius, 0, this.radiansToDegrees(currentAngle)));
+
+        // Redraw handle
+        const handle = this.activeSlider.querySelector('.handle');
+        const handleCenter = this.calculateHandleCenter(currentAngle, radius);
+        handle.setAttribute('cx', handleCenter.x);
+        handle.setAttribute('cy', handleCenter.y);
+    }
+
+    getMouseCoordinates (e) {   
+        const containerRect = document.querySelector('.slider').getBoundingClientRect();
+        const x = e.clientX - containerRect.left;
+        const y = e.clientY - containerRect.top;
+        return { x, y };
+    }
+
+    calculateMouseAngle(rmc) {
+        const angle = Math.atan2(rmc.y - this.cy, rmc.x - this.cx);
+        if (angle > - this.tau / 2 && angle < - this.tau / 4) {
+            return angle + this.tau * 1.25;
+        } else {
+            return angle + this.tau * 0.25;
+        }
+    }
+
+    radiansToDegrees(angle) {
+        return angle / (Math.PI / 180);
+    }
+
+    closestSlider(rmc) {
+        const mouseDistanceFromCenter = Math.hypot(rmc.x - this.cx, rmc.y - this.cy);
+        const container = document.querySelector('.slider');
+        const sliderGroups = Array.from(container.querySelectorAll('g'));
+
+        // Get distances from client coordinates to each slider
+        const distances = sliderGroups.map(slider => {
+            const rad = parseInt(slider.getAttribute('rad'));
+            return Math.min( Math.abs(mouseDistanceFromCenter - rad) );
+        });
+
+        // Find closest slider
+        const closestSliderIndex = distances.indexOf(Math.min(...distances));
+        this.activeSlider = sliderGroups[closestSliderIndex];
+    }
 }
