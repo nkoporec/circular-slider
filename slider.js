@@ -12,6 +12,8 @@ class Slider {
     }
 
     init() {
+        this.createValueUI();
+
         const svgContainer = document.createElement('div');
         svgContainer.classList.add('slider');
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -20,7 +22,7 @@ class Slider {
         svgContainer.appendChild(svg);
         this.container.appendChild(svgContainer);
 
-        this.sliders.forEach((slider) => this.drawSlider(svg, slider));
+        this.sliders.forEach((slider, index) => this.drawSlider(svg, slider, index));
 
         svgContainer.addEventListener('mousedown', this.mouseStart.bind(this), false);
         svgContainer.addEventListener('touchstart', this.mouseStart.bind(this), false);
@@ -30,7 +32,7 @@ class Slider {
         window.addEventListener('touchend', this.mouseEnd.bind(this), false);
     }
 
-    drawSlider(svg, slider) {
+    drawSlider(svg, slider, index) {
         // Defaults.
         slider.radius = slider.radius ?? 50;
         slider.min = slider.min ?? 0;
@@ -43,6 +45,7 @@ class Slider {
         const sliderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
         sliderGroup.setAttribute('transform', 'rotate(-90,' + this.cx + ',' + this.cy + ')');
+        sliderGroup.setAttribute('data-slider', index);
         sliderGroup.setAttribute('rad', slider.radius);
         svg.appendChild(sliderGroup);
 
@@ -153,6 +156,21 @@ class Slider {
         const handleCenter = this.calculateHandleCenter(currentAngle, radius);
         handle.setAttribute('cx', handleCenter.x);
         handle.setAttribute('cy', handleCenter.y);
+
+        this.updateValueUI(currentAngle);
+    }
+
+    updateValueUI(currentAngle) {
+        const sliderIndex = this.activeSlider.getAttribute('data-slider');
+        const targetUi = document.querySelector(`li[data-slider="${sliderIndex}"] .slider-val`);
+        const currentSlider = this.sliders[sliderIndex];
+        const currentSliderRange = currentSlider.max - currentSlider.min;
+
+        let currentValue = currentAngle / this.tau * currentSliderRange;
+        const numOfSteps =  Math.round(currentValue / currentSlider.step);
+        currentValue = currentSlider.min + numOfSteps * currentSlider.step;
+
+        targetUi.innerText = currentValue;
     }
 
     getMouseCoordinates (e) {   
@@ -189,5 +207,27 @@ class Slider {
         // Find closest slider
         const closestSliderIndex = distances.indexOf(Math.min(...distances));
         this.activeSlider = sliderGroups[closestSliderIndex];
+    }
+
+    createValueUI() {
+        const ui_wrapper = document.createElement('ul');
+
+        this.sliders.forEach((slider, index) => {
+            const li = document.createElement('li');
+            li.setAttribute('data-slider', index);
+
+            const sliderValue = document.createElement('span');
+            sliderValue.classList.add('slider-val');
+            sliderValue.innerText = slider.initialValue ?? 0;
+            li.appendChild(sliderValue);
+
+            const sliderName = document.createElement('span');
+            sliderName.innerText = slider.id ?? 'Unknown';
+            li.appendChild(sliderName);
+
+            ui_wrapper.appendChild(li);
+        });
+
+        this.container.appendChild(ui_wrapper);
     }
 }
