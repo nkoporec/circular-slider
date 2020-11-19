@@ -1,64 +1,110 @@
 class Slider {
-  
-  constructor({ selector, sliders }) {
-    this.selector = selector;
-    this.wrapper = document.querySelector(this.selector); 
-    this.sliders = sliders;
-    this.width = 600;
-    this.height = 600;
-    // @TODO Replace with actual Pi.
-    this.pi2 = 2 * 3,14;
-    this.arcLength = 10;
-    this.arcSpacing = 0.7;
-    this.cx = this.sliderWidth / 2;
-    this.cy = this.sliderHeight / 2;
-  }
 
-  init() {
-    const svgWrap = document.createElement('div');
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    constructor({ selector, sliders }) {
+        this.selector = selector;
+        this.container = document.querySelector(this.selector);
+        this.sliderWidth = 400;
+        this.sliderHeight = 400;
+        this.cx = this.sliderWidth / 2;
+        this.cy = this.sliderHeight / 2;
+        this.tau = Math.PI * 2;
+        this.sliders = sliders;
+    }
 
-    // Basic svg attributes.
-    svg.setAttribute('height', this.width);
-    svg.setAttribute('width', this.height);
+    init() {
+        const svgContainer = document.createElement('div');
+        svgContainer.classList.add('slider__data');
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('height', this.sliderWidth);
+        svg.setAttribute('width', this.sliderHeight);
+        svgContainer.appendChild(svg);
+        this.container.appendChild(svgContainer);
 
-    // Append the new svg el.
-    svgWrap.appendChild(svg);
-    this.wrapper.appendChild(svgWrap);
+        this.sliders.forEach((slider) => this.drawSlider(svg, slider));
+    }
 
-    // Start drawing sliders.
-    this.sliders.forEach((slider, index) => this.drawSlider(svg, slider, index));
-  }
+    drawSlider(svg, slider) {
+        // Defaults.
+        slider.radius = slider.radius ?? 50;
+        slider.min = slider.min ?? 0;
+        slider.max = slider.max ?? 1000;
+        slider.step = slider.step ?? 50;
+        slider.initialValue = slider.initialValue ?? 0;
+        slider.color = slider.color ?? '#FF5733';
 
-  drawSlider(svg, slider, index) {
-    // Defaults.
-    slider.radius = slider.radius ?? 50;
-    slider.min = slider.min ?? 0;
-    slider.max = slider.max ?? 100;
-    slider.step = slider.step ?? 5;
-    slider.initialVal = slider.initialVal ?? 0;
+        const initialAngle = Math.floor( (slider.initialValue / (slider.max - slider.min)) * 360 );
+        const sliderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-    const circumf = slider.radius * this.pi2;
-    const initialAngle = Math.floor( (slider.initialVal / (slider.max - slider.min)) * 360 );
+        sliderGroup.setAttribute('transform', 'rotate(-90,' + this.cx + ',' + this.cy + ')');
+        sliderGroup.setAttribute('rad', slider.radius);
+        svg.appendChild(sliderGroup);
 
-    const arcSpacing = this.calculateArcSpacing(circumf, this.arcLength, this.arcSpacing);
+        this.drawPath(slider.radius, 360, sliderGroup, slider.color);
+        this.drawHandle(slider, initialAngle, sliderGroup);
+    }
 
-    const sliderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    sliderGroup.setAttribute('class', 'slider-single');
-    sliderGroup.setAttribute('data-slider', index);
-    sliderGroup.setAttribute('transform', 'rotate(-90,' + this.cx + ',' + this.cy + ')');
-    sliderGroup.setAttribute('rad', slider.radius);
-    svg.appendChild(sliderGroup);
+    drawPath(radius, angle, group, color) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', this.describeArc(this.cx, this.cy, radius, 0, angle));
+        path.style.stroke = color;
+        path.style.strokeWidth = 30;
+        path.style.fill = 'none';
+        group.appendChild(path);
+    }
 
-    return;
-  }
+    drawHandle(slider, initialAngle, group) {
+        const handleCenter = this.calculateHandleCenter(initialAngle * this.tau / 360, slider.radius);
+        const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
 
-  calculateArcSpacing(circumf, arcLength, arcSpacing) {
-    const num = Math.floor((circumf / arcLength) * arcSpacing);
-    const total = circumf - num * arcLength;
-    const result = total / num;
-    
-    return result;
-  }
+        handle.setAttribute('class', 'sliderHandle');
+        handle.setAttribute('cx', handleCenter.x);
+        handle.setAttribute('cy', handleCenter.y);
+        handle.setAttribute('r', 12.5);
+        handle.style.stroke = "#888888";
+        handle.style.strokeWidth = 3;
+        handle.style.fill = '#fff';
+
+        group.appendChild(handle);
+    }
+
+    describeArc (x, y, radius, startAngle, endAngle) {
+        let endAngleOriginal, start, end, arcSweep, path;
+        endAngleOriginal = endAngle;
+
+        if(endAngleOriginal - startAngle === 360){
+            endAngle = 359;
+        }
+
+        start = this.polarToCartesian(x, y, radius, endAngle);
+        end = this.polarToCartesian(x, y, radius, startAngle);
+        arcSweep = endAngle - startAngle <= 180 ? '0' : '1';
+
+        if (endAngleOriginal - startAngle === 360) {
+            path = [
+                'M', start.x, start.y,
+                'A', radius, radius, 0, arcSweep, 0, end.x, end.y, 'z'
+            ].join(' ');
+        } else {
+            path = [
+                'M', start.x, start.y,
+                'A', radius, radius, 0, arcSweep, 0, end.x, end.y
+            ].join(' ');
+        }
+
+        return path;
+    }
+
+    polarToCartesian (centerX, centerY, radius, angleInDegrees) {
+        const angleInRadians = angleInDegrees * Math.PI / 180;
+        const x = centerX + (radius * Math.cos(angleInRadians));
+        const y = centerY + (radius * Math.sin(angleInRadians));
+        return {x, y};
+    }
+
+    calculateHandleCenter (angle, radius) {
+        const x = this.cx + Math.cos(angle) * radius;
+        const y = this.cy + Math.sin(angle) * radius;
+        return {x, y};
+    }
 
 }
