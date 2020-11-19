@@ -6,9 +6,10 @@ class Slider {
     this.sliders = sliders;
     this.width = 600;
     this.height = 600;
-    this.pi2 = 2 * Math.Pi;
+    // @TODO Replace with actual Pi.
+    this.pi2 = 2 * 3,14;
     this.arcLength = 10;
-    this.arcSpacing = 1;
+    this.arcSpacing = 0.7;
   }
 
   init() {
@@ -44,7 +45,11 @@ class Slider {
   }
 
   calculateArcSpacing(circumf, arcLength, arcSpacing) {
-    return;
+    const num = Math.floor((circumf / arcLength) * arcSpacing);
+    const total = circumf - num * arcLength;
+    const result = total / num;
+    
+    return result;
   }
 
 }
