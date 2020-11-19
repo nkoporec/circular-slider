@@ -46,8 +46,8 @@ class Slider {
         sliderGroup.setAttribute('rad', slider.radius);
         svg.appendChild(sliderGroup);
 
-        this.drawPath(slider.radius, 360, sliderGroup, "#000", 'back');
-        this.drawPath(slider.radius, 360, sliderGroup, slider.color, 'front');
+        this.drawPath(slider.radius, 360, sliderGroup, "grey", 'back');
+        this.drawPath(slider.radius, 0, sliderGroup, slider.color, 'front');
 
         this.drawHandle(slider, initialAngle, sliderGroup);
     }
