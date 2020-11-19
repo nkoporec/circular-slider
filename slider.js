@@ -10,6 +10,8 @@ class Slider {
     this.pi2 = 2 * 3,14;
     this.arcLength = 10;
     this.arcSpacing = 0.7;
+    this.cx = this.sliderWidth / 2;
+    this.cy = this.sliderHeight / 2;
   }
 
   init() {
@@ -40,6 +42,13 @@ class Slider {
     const initialAngle = Math.floor( (slider.initialVal / (slider.max - slider.min)) * 360 );
 
     const arcSpacing = this.calculateArcSpacing(circumf, this.arcLength, this.arcSpacing);
+
+    const sliderGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    sliderGroup.setAttribute('class', 'slider-single');
+    sliderGroup.setAttribute('data-slider', index);
+    sliderGroup.setAttribute('transform', 'rotate(-90,' + this.cx + ',' + this.cy + ')');
+    sliderGroup.setAttribute('rad', slider.radius);
+    svg.appendChild(sliderGroup);
 
     return;
   }
