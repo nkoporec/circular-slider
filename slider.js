@@ -19,5 +19,19 @@ class Slider {
     // Append the new svg el.
     svgWrap.appendChild(svg);
     this.wrapper.appendChild(svgWrap);
+
+    // Start drawing sliders.
+    this.sliders.forEach((slider, index) => this.drawSlider(svg, slider, index));
+  }
+
+  drawSlider(svg, slider, index) {
+    // Defaults.
+    slider.radius = slider.radius ?? 50;
+    slider.min = slider.min ?? 0;
+    slider.max = slider.max ?? 100;
+    slider.step = slider.step ?? 5;
+    slider.initialVal = slider.initialVal ?? 0;
+
+    return;
   }
 }
